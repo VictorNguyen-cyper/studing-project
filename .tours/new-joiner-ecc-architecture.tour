@@ -1,0 +1,78 @@
+{
+  "$schema": "https://aka.ms/codetour-schema",
+  "title": "ECC Repo: New Joiner Tour",
+  "description": "How the ECC Claude Code plugin is put together — where agents/skills/commands live, what glues them together, and what gates a contribution.",
+  "ref": "main",
+  "steps": [
+    {
+      "title": "Start Here",
+      "description": "ECC is a Claude Code **plugin**, not an app: it ships agents, skills, commands, hooks, and rules that get installed into a user's Claude Code setup. There's also a small secondary Rust TUI (ecc2/) — ignore it for your first lap."
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 1,
+      "title": "Project Instructions",
+      "description": "Situation: this is the file Claude Code itself reads on every session in this repo. Mechanism: it documents architecture, test commands, and contribution format. Implication: when conventions here disagree with what you read elsewhere, this file wins."
+    },
+    {
+      "directory": "agents",
+      "title": "Agents",
+      "description": "70 specialized subagents, one Markdown file each. Each needs YAML frontmatter (name, description, tools, model) and a 'Prompt Defense Baseline' section — see validate-agents.js for what's actually enforced."
+    },
+    {
+      "directory": "skills",
+      "title": "Skills",
+      "description": "294 skill folders, each with a SKILL.md (When to Use / How It Works / Examples). This is the largest surface in the repo and the direction ECC is moving toward — commands increasingly just delegate to a skill."
+    },
+    {
+      "directory": "commands",
+      "title": "Commands",
+      "description": "96 slash-command Markdown files. Gotcha: many are described as 'legacy shims' — the repo is deliberately shifting weight from commands onto skills, so prefer extending a skill over adding a new command unless a discrete entry point is genuinely needed."
+    },
+    {
+      "file": ".claude-plugin/plugin.json",
+      "line": 40,
+      "title": "Plugin Manifest",
+      "description": "Mechanism: this is what Claude Code actually reads to discover the plugin — it points at ./skills/ and ./commands/ as whole directories, auto-discovering every file inside. Implication: a new skill or command needs no manual registration here; agents/ is discovered by convention the same way."
+    },
+    {
+      "file": "scripts/ci/catalog.js",
+      "line": 1,
+      "title": "The Catalog Script (the gotcha that bites new contributors)",
+      "description": "Situation: README.md, AGENTS.md, SOUL.md, plugin.json, marketplace.json, and the zh-CN docs all hardcode the current agent/skill/command counts in prose. Mechanism: this script scans the repo and compares the real counts against every documented occurrence. Gotcha: add one agent/skill/command and `npm run catalog:check` fails in CI until you run `npm run catalog:sync` — it's not optional cleanup, it's a required step after adding any of the three."
+    },
+    {
+      "file": "scripts/ci/generate-command-registry.js",
+      "line": 1,
+      "title": "Command Registry",
+      "description": "Mechanism: generates docs/COMMAND-REGISTRY.json from the commands/ directory. Same pattern as catalog.js — after adding/removing a command, run `npm run command-registry:write`, or `command-registry:check` fails in CI."
+    },
+    {
+      "file": "scripts/ci/validate-agents.js",
+      "line": 9,
+      "title": "What Actually Gets Validated",
+      "description": "Mechanism: parses each agent's frontmatter by hand (no YAML library) and requires `model` and `tools` at minimum. Implication: the Markdown prose conventions in CONTRIBUTING.md (Prompt Defense Baseline, section headers) are team convention, not machine-enforced here — don't assume CI will catch a missing section."
+    },
+    {
+      "file": "package.json",
+      "line": 501,
+      "title": "The Real Pre-Commit Gate",
+      "description": "This is the full `npm test` chain: unicode safety, then validate-{agents,commands,rules,skills,hooks}, then install-manifest/context-profile/personal-path checks, then catalog:check and command-registry:check, then the actual unit tests in tests/. Gotcha: several of these validators (validate-skills, validate-hooks, validate-install-manifests) require `js-yaml`, which means a plain clone without `npm install` will fail them with MODULE_NOT_FOUND — not a real validation failure, just a missing dependency."
+    },
+    {
+      "file": "tests/run-all.js",
+      "line": 1,
+      "title": "Unit Tests",
+      "description": "Mirrors the scripts/ structure one-to-one. If you add a script under scripts/lib/, the project convention (see CLAUDE.md / node.md rules) is a matching test file here, named *.test.js."
+    },
+    {
+      "directory": "rules",
+      "title": "Rules",
+      "description": "Per-language always-follow standards, opt-in per project (122 rule files validated by validate-rules.js). These are what get copied into a consuming project's .claude/rules/, not applied to ECC's own development directly."
+    },
+    {
+      "title": "Where To Go Next",
+      "description": "Pick one language/domain's agent + skill + rule triplet (e.g. python-reviewer agent, python-patterns skill, rules/python/) and read them together — that's the fastest way to see how the three layers reinforce each other in practice."
+    }
+  ]
+}
